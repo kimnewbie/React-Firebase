@@ -1,36 +1,26 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import TaskAdd from './components/TaskAdd';
 import TaskDisplay from "./components/TaskDisplay";
 import 'bulma/css/bulma.min.css';
+import {firestore} from "./firebase/firebase";
 
 function App() {
-    const [todo, setTodo] = useState({
-        tasks: [
-            {
-                todo: "할일 1"
-            }, {
-                todo: "할일 2"
-            }, {
-                todo: "할일 3"
-            }, {
-                todo: "할일 4"
-            }
-        ],
-        task: ""
-    });
+    const [todo, setTodo] = useState({tasks: [], task: ""});
 
     const onClickHandler = (e) => {
         e.preventDefault(); // todo 입력하면 새로고침되서
-        const task = {
-            todo: todo.task
-        };
-        const tasks = [
-            ...todo.tasks,
-            task
-        ] // 새로추가해도 남도록
-        setTodo({
-            tasks, task: "", // 저장됐으니까 초기화
-        });
+        firestore
+            .collection('todo')
+            .add({todo: todo.task})
+            .then(r => {
+                const tasks = [
+                    ...todo.tasks, {
+                        todo: todo.task,
+                        id: r.id
+                    }
+                ]
+                setTodo({tasks, task: ''})
+            })
     };
     const onChangeHandler = (e) => {
         setTodo({
@@ -38,14 +28,40 @@ function App() {
             task: e.target.value
         });
     };
-    const deleteHandler = (idx) => {
-        setTodo({
-            tasks: todo
-                .tasks
-                .filter((task, i) => i !== idx),
-            task: '' // undefined일 때 ''가 들어가도록
-        })
+    const deleteHandler = (id) => {
+        firestore
+            .collection('todo')
+            .doc(id)
+            .delete()
+            .then(() => {
+                const tasks = todo
+                    .tasks
+                    .filter((task, i) => task.id !== id)
+                setTodo({tasks})
+            })
+        // setTodo({ tasks: todo .tasks .filter((task, i) => i !== idx), task: ''
+        // undefined일 때 ''가 들어가도록 })
     }
+
+    useEffect(() => {
+        const tasks = [...todo.tasks]
+        firestore
+            .collection('todo')
+            .get()
+            .then(docs => {
+                docs.forEach(doc => {
+                    tasks.push({
+                        todo: doc
+                            .data()
+                            .todo,
+                        id: doc.id
+                    })
+                })
+                // setTodo({tasks: tasks})
+                setTodo({tasks})
+            })
+    }, [])
+
     return (
         <div className="container">
             <TaskAdd
