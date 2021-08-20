@@ -5,9 +5,15 @@ const TaskDisplay = ({todo, deleteHandler}) => {
         .tasks
         .map((task, i) => {
             return (
-                <div key={i}>
-                    <span>{task.todo}</span>
-                    <button onClick={() => deleteHandler(i)}>삭제</button>
+                <div key={i} className="box">
+                    <div className="level">
+                        <div className="level-left">
+                            <span className="title">{task.todo}</span>
+                        </div>
+                        <div className="level-right">
+                            <button className="button is-danger" onClick={() => deleteHandler(i)}>삭제</button>
+                        </div>
+                    </div>
                 </div>
             );
         })
